@@ -1,0 +1,32 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile.prod
+    container_name: multitenant-backend-nestjs
+    env_file: .env
+    ports:
+      - 3000:3000
+    depends_on:
+      database:
+        condition: service_healthy
+
+  database:
+    image: mysql:8.0.24
+    container_name: multitenant-database-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    volumes:
+      - ./.files/mysql:/var/lib/mysql
+    networks:
+      - multitenant
+    healthcheck:
+      test:  ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 10s
+      retries: 3
+
+networks:
+  multitenant:
+    driver: bridge
